@@ -222,6 +222,8 @@ async def process_receipt(message: types.Message, state: FSMContext):
     # Уведомляем админов и сохраняем ID их сообщений
     builder = InlineKeyboardBuilder()
     builder.button(text="Подтвердить оплату", callback_data=f"confirm_payment_{message.from_user.id}_{event_id}")
+    builder.button(text="Отклонить оплату", callback_data=f"disable_payment_{message.from_user.id}_{event_id}")
+
 
     data = await state.get_data()
     receipt_type = data.get('receipt_type')
@@ -292,6 +294,38 @@ async def confirm_payment(callback: types.CallbackQuery, state: FSMContext):
         callback=callback
     )
 
+
+    # Очищаем состояние
+    await state.clear()
+    await callback.answer()
+
+
+@router.callback_query(F.data.startswith("confirm_payment_"))
+async def confirm_payment(callback: types.CallbackQuery, state: FSMContext):
+    # Извлекаем данные из callback_data
+    _, _, user_id, event_id = callback.data.split("_")
+    user_id = int(user_id)
+    event_id = int(event_id)
+
+    # Удаляем уведомления у администраторов
+    for admin_id in ADMINS:
+        message_ids = get_admin_notifications(admin_id)
+        for message_id in message_ids:
+            if user_id == message_id['user_id']:
+                try:
+                    await callback.bot.delete_message(admin_id, message_id['message_id'])
+                except Exception as e:
+                    print(f"Не удалось удалить сообщение у администратора {admin_id}: {e}")
+                delete_admin_notifications(admin_id, user_id)
+
+    # Уведомляем админа, который подтвердил оплату
+    await callback.message.answer("Вы успешно отклонили оплату.")
+
+    # Уведомляем пользователя
+    await callback.bot.send_message(
+        chat_id=user_id,
+        text="Ваш платеж отклонен! Свяжитесь с менеджером: @admin_username"
+    )
 
     # Очищаем состояние
     await state.clear()
