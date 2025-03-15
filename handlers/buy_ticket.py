@@ -100,7 +100,7 @@ async def buy_ticket(message: types.Message, state: FSMContext):
     # Проверяем, есть ли активные мероприятия
     active_events = get_active_events()  # Функция для получения активных мероприятий
     if not active_events:
-        await message.answer("Следите за обновлениями в нашем Telegram-канале (ссылка).", reply_markup=get_main_menu(message.chat.id))
+        await message.answer(f"Следите за обновлениями в нашем [Telegram-канале](https://t.me/routevents).", reply_markup=get_main_menu(message.chat.id), parse_mode="Markdown")
         return
 
     # Проверяем, зарегистрирован ли пользователь
@@ -118,7 +118,7 @@ async def show_events(message: types.Message):
     for event in active_events:
         # Создаем inline-кнопку "Купить"
         builder = InlineKeyboardBuilder()
-        builder.button(text="Купить", callback_data=f"buy_{event['id']}")
+        builder.button(text="Купить", callback_data=f"order_{event['id']}")
 
         # Проверяем, есть ли фото у мероприятия
         if event.get("photo"):
@@ -135,7 +135,30 @@ async def show_events(message: types.Message):
                 reply_markup=builder.as_markup()
             )
 
-# Обработка нажатия на кнопку "Купить"
+@router.callback_query(F.data.startswith("order_"))
+async def process_buy_ticket(callback: types.CallbackQuery, state: FSMContext):
+    event_id = int(callback.data.split("_")[1])  # Извлекаем ID мероприятия
+    event = next((e for e in get_active_events() if e["id"] == event_id), None)
+
+    if not event:
+        await callback.message.answer("Мероприятие не найдено.")
+        await callback.answer()
+        return
+
+    builder = InlineKeyboardBuilder()
+    builder.button(text="Ознакомился", callback_data=f"buy_{event_id}")
+    builder.button(text="Отмена", callback_data="payment_cancelled")
+    builder.adjust(2)  # По две кнопки в строке
+
+    await callback.message.answer_document(
+        document=FSInputFile("ОСНОВНОЙ_правила_посещения_мероприятия_ROUT_готов.docx"),
+        caption=f"**Ознакомьтесь перед покупкой с основными правилами мероприятия «ROUT EVENT»:**",
+        reply_markup=builder.as_markup(),
+        parse_mode="Markdown"
+    )
+    await callback.answer()
+
+# Обработка нажатия на кнопку "Купить"Основными правилами
 @router.callback_query(F.data.startswith("buy_"))
 async def process_buy_ticket(callback: types.CallbackQuery, state: FSMContext):
     event_id = int(callback.data.split("_")[1])  # Извлекаем ID мероприятия
@@ -168,7 +191,7 @@ async def process_buy_ticket(callback: types.CallbackQuery, state: FSMContext):
 async def payment_cancelled(callback: types.CallbackQuery, state: FSMContext):
     await callback.message.delete()
     await state.clear()
-    await callback.message.answer(" Покупка отменена.", reply_markup=get_main_menu(callback.message.chat.id))
+    await callback.message.answer("Покупка отменена.", reply_markup=get_main_menu(callback.message.chat.id))
 
 # Обработка кнопки "Оплатил"
 @router.callback_query(F.data == "payment_confirmed")
@@ -300,8 +323,8 @@ async def confirm_payment(callback: types.CallbackQuery, state: FSMContext):
     await callback.answer()
 
 
-@router.callback_query(F.data.startswith("confirm_payment_"))
-async def confirm_payment(callback: types.CallbackQuery, state: FSMContext):
+@router.callback_query(F.data.startswith("disable_payment_"))
+async def disable_payment(callback: types.CallbackQuery, state: FSMContext):
     # Извлекаем данные из callback_data
     _, _, user_id, event_id = callback.data.split("_")
     user_id = int(user_id)

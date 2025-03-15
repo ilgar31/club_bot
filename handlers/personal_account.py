@@ -138,7 +138,7 @@ async def my_events(callback: types.CallbackQuery):
     events_text = "Ваши тусовки:\n\n"
     for event in user_events:
         events_text += f"🎉 {event['name']}\n"
-        if event.get("photo_album_link"):
+        if event.get("photo_album_link") != 'Нет':
             events_text += f"📸 [Фотоальбом]({event['photo_album_link']})\n"
         events_text += "\n"
 

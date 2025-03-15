@@ -46,8 +46,7 @@ async def start_cmd(message: types.Message):
                     f"🎟 *Информация о билете*\n"
                     f"Имя: {user['full_name']}\n"
                     f"Мероприятие: {event['name']}\n"
-                    f"Дата: {event['date']}\n"
-                    f"Статус: {'✅ Действителен' if ticket_valid else '❌ Недействителен'}",
+                    f"Дата: {event['date']}\n",
                     parse_mode="Markdown"
                 )
         else:

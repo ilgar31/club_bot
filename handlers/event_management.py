@@ -14,10 +14,10 @@ choice_name = {
     "description": "Описание",
     "photo": "Фото",
     "price": "Цена",
-    "date": "Дата",
+    "date": "Дата (Используйте формат ГГГГ-ММ-ДД ЧЧ:ММ)",
     "is_sale_active": "Статус продаж",
     "qr_template": "QR-шаблон",
-    "photo_album_link": "Фотоальбом"
+    "photo_album_link": "Фотоальбом (или слово 'Нет')"
 }
 
 def validate_date_format(date_str: str, date_format: str = "%Y-%m-%d %H:%M") -> bool:
@@ -138,7 +138,7 @@ async def process_event_qr_template(message: types.Message, state: FSMContext):
         f.write(file_bytes.getvalue())
 
     await state.update_data(qr_template=qr_template_path)
-    await message.answer("Введите ссылку на фотоальбом (если есть):")
+    await message.answer("Введите ссылку на фотоальбом (или слово 'Нет'):")
     await state.set_state(EventManagementStates.waiting_for_event_photo_album_link)
 
 @router.message(EventManagementStates.waiting_for_event_photo_album_link)
