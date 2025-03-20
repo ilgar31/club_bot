@@ -33,14 +33,24 @@ async def start_cmd(message: types.Message):
                 builder = InlineKeyboardBuilder()
                 builder.button(text="Использован", callback_data=f"used_ticket_{ticket_id}")
 
-                await message.answer(
-                    f"🎟 *Информация о билете*\n"
-                    f"Имя: {user['full_name']}\n"
-                    f"Мероприятие: {event['name']}\n"
-                    f"Дата: {event['date']}\n"
-                    f"Статус: {'✅ Действителен' if ticket_valid else '❌ Недействителен'}",
-                    parse_mode="Markdown", reply_markup=builder.as_markup()
-                )
+                if ticket_valid:
+                    await message.answer(
+                        f"🎟 *Информация о билете*\n"
+                        f"Имя: {user['full_name']}\n"
+                        f"Мероприятие: {event['name']}\n"
+                        f"Дата: {event['date']}\n"
+                        f"Статус: ✅ Действителен",
+                        parse_mode="Markdown", reply_markup=builder.as_markup()
+                    )
+                else:
+                    await message.answer(
+                        f"🎟 *Информация о билете*\n"
+                        f"Имя: {user['full_name']}\n"
+                        f"Мероприятие: {event['name']}\n"
+                        f"Дата: {event['date']}\n"
+                        f"Статус: ❌ Недействителен",
+                        parse_mode="Markdown"
+                    )
             else:
                 await message.answer(
                     f"🎟 *Информация о билете*\n"

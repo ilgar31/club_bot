@@ -14,6 +14,7 @@ def get_main_menu(user_id):
     if user_id in ADMINS:
         buttons.append([KeyboardButton(text="⚙️ Управление мероприятиями")])
         buttons.append([KeyboardButton(text="💰 Обновить ссылку для оплаты")])
+        buttons.append([KeyboardButton(text="📄 Получить список гостей")])
 
     # Создаем клавиатуру с кнопками
     keyboard = ReplyKeyboardMarkup(keyboard=buttons, resize_keyboard=True)

@@ -25,7 +25,7 @@ async def feedback(message: types.Message):
 # Обработка кнопки "Связаться с менеджером"
 @router.callback_query(F.data == "contact_manager")
 async def contact_manager(callback: types.CallbackQuery):
-    await callback.message.answer("Свяжитесь с менеджером: @admin_username")
+    await callback.message.answer("Свяжитесь с менеджером: @rout_manager")
     await callback.answer()
 
 # Обработка кнопки "Оставить отзыв"

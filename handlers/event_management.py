@@ -6,6 +6,10 @@ from database import get_events, add_event, update_event, delete_event, update_p
 from keyboards.main_menu import get_main_menu
 from datetime import datetime
 from io import BytesIO
+import pandas as pd
+import sqlite3
+from aiogram.types import FSInputFile
+
 
 router = Router()
 
@@ -43,6 +47,67 @@ class EventManagementStates(StatesGroup):
     waiting_for_new_value_sale = State()
     waiting_for_event_delete_choice = State()
     waiting_payment_link = State()
+
+
+def export_event_attendees_to_excel(event_id: int, output_file: str = "Список гостей.xlsx"):
+    # Подключаемся к базе данных
+    conn = sqlite3.connect("rout_bot.db")
+    cursor = conn.cursor()
+
+    # Запрос для получения данных о пользователях, купивших билеты на мероприятие
+    query = """
+        SELECT u.full_name, u.university, u.phone_number
+        FROM users u
+        JOIN tickets t ON u.id = t.user_id
+        WHERE t.event_id = ?
+    """
+    cursor.execute(query, (event_id,))
+    attendees = cursor.fetchall()
+
+    # Закрываем соединение с базой данных
+    conn.close()
+
+    # Если данные найдены, создаём DataFrame и сохраняем в Excel
+    if attendees:
+        # Создаём DataFrame из данных
+        df = pd.DataFrame(attendees, columns=["ФИО", "Университет", "Номер телефона"])
+
+        # Сохраняем DataFrame в Excel-файл
+        df.to_excel(output_file, index=False)
+        print(f"Данные успешно экспортированы в файл {output_file}")
+    else:
+        print("На данное мероприятие билеты не куплены.")
+
+
+@router.message(F.text == "📄 Получить список гостей")
+async def get_guests(message: types.Message, state: FSMContext):
+    events = get_events()
+    if not events:
+        await message.answer("Нет доступных мероприятий.")
+        return
+
+    # Создаем inline-клавиатуру с мероприятиями
+    builder = InlineKeyboardBuilder()
+    for event in events:
+        builder.button(text=event["name"], callback_data=f"guests_event_{event['id']}")
+    builder.adjust(1)  # По одной кнопке в строке
+
+    await message.answer("Выберите мероприятие для редактирования:", reply_markup=builder.as_markup())
+
+
+# Обработка выбора мероприятия для редактирования
+@router.callback_query(F.data.startswith("guests_event_"))
+async def get_guests_event(callback: types.CallbackQuery, state: FSMContext):
+    event_id = int(callback.data.split("_")[-1])
+    await callback.message.delete()
+
+    export_event_attendees_to_excel(event_id)
+
+    await callback.message.answer_document(
+        document=FSInputFile("Список гостей.xlsx")
+    )
+    await callback.answer()
+
 
 
 # Обработка кнопки "💰 Обновить ссылку для оплаты"

@@ -347,7 +347,7 @@ async def disable_payment(callback: types.CallbackQuery, state: FSMContext):
     # Уведомляем пользователя
     await callback.bot.send_message(
         chat_id=user_id,
-        text="Ваш платеж отклонен! Свяжитесь с менеджером: @admin_username"
+        text="Ваш платеж отклонен! Свяжитесь с менеджером: @rout_manager"
     )
 
     # Очищаем состояние
